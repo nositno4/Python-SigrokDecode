@@ -1,0 +1,31 @@
+name: 清理 GitHub 历史
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_repo:
+        description: '目标分支名称 (master/main)'
+        required: true
+        type: choice
+        options:
+          - master
+          - main
+        default: main
+jobs:
+  clean-history:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Push orphan branch
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git checkout --orphan temp_branch
+          git add -A
+          git commit -m "clean history"
+          git branch -D main
+          git branch -m main
+          git push -f origin ${{ github.event.inputs.target_repo }}
+          git push origin --delete $(git tag -l) || true
